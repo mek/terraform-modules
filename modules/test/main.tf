@@ -5,6 +5,13 @@ variable "force_rewrite" {
   default     = "initial"
 }
 
+# Add tags variable
+variable "tags" {
+  description = "Tags for resource identification and management"
+  type        = map(string)
+  default     = {}
+}
+
 # The null_resource acts as a proxy for the variable.
 # Changing the variable's value will taint this resource,
 # which can then be referenced by replace_triggered_by.
@@ -33,6 +40,16 @@ data "aws_subnets" "all_subnets_in_vpcs" {
 locals {
   subnets_by_vpc = {
     for k, v in data.aws_subnets.all_subnets_in_vpcs : k => v.ids
+  }
+
+  # Add tags to the metadata
+  metadata = {
+    aws_account_id = data.aws_caller_identity.current.account_id
+    all_vpc_ids    = data.aws_vpcs.all_vpcs.ids
+    subnets_by_vpc = local.subnets_by_vpc
+    tags           = var.tags  # Include tags in the output
+    timestamp      = timestamp()
+    force_rewrite  = var.force_rewrite
   }
 }
 
